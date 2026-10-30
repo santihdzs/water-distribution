@@ -1,0 +1,45 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+
+% reuse the paper's figures and logo, nothing is regenerated.
+% first hit wins, so a local figures/ overrides the paper's.
+\graphicspath{{figures/}{../paper/figures/}}
+
+\usepackage{loomtheme}
+
+\title{Presentation Title}
+\subtitle{Subtitle}
+\author{Santiago Hernández}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}[plain]
+  \centering
+  \includegraphics[height=1.1cm]{tec_logo.png}\\[1.2em]
+  {\usebeamerfont{title}\usebeamercolor[fg]{title}\inserttitle\par}
+  \vspace{0.3em}{\large\insertsubtitle\par}
+  \vspace{1.2em}{\insertauthor\par}
+  \vspace{0.3em}{\small\insertdate\par}
+\end{frame}
+
+\begin{frame}{Outline}
+  \tableofcontents
+\end{frame}
+
+\input{sections/problem}
+\input{sections/methods}
+\input{sections/results}
+\input{sections/comparison}
+\input{sections/conclusions}
+
+\begin{frame}[plain]
+  \centering
+  {\usebeamerfont{title}\usebeamercolor[fg]{title}Thanks\par}
+  \vspace{0.5em}{\large Questions?\par}
+\end{frame}
+
+\end{document}

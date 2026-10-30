@@ -1,0 +1,37 @@
+% loom beamer theme. matches the paper: serif computer modern, loom accent purple,
+% thin rule under frame titles, no navigation clutter.
+\ProvidesPackage{loomtheme}[2026/09/22 loom beamer theme]
+
+\usetheme{default}
+\usefonttheme{serif}              % computer modern, same as the paper
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+
+% loom accent, the prop_cycle head from loom.mplstyle
+\definecolor{loomaccent}{HTML}{BC80BD}
+\definecolor{loomink}{HTML}{323034}
+
+\setbeamercolor{structure}{fg=loomaccent}
+\setbeamercolor{normal text}{fg=loomink}
+\setbeamercolor{frametitle}{fg=loomaccent,bg=}
+\setbeamercolor{title}{fg=loomaccent}
+\setbeamercolor{itemize item}{fg=loomaccent}
+\setbeamercolor{itemize subitem}{fg=loomaccent}
+\setbeamercolor{block title}{fg=white,bg=loomaccent}
+
+\setbeamerfont{frametitle}{series=\bfseries,size=\large}
+\setbeamerfont{title}{series=\bfseries,size=\LARGE}
+
+% frame title with a thin rule under it
+\setbeamertemplate{frametitle}{%
+  \vspace{0.6em}%
+  \usebeamerfont{frametitle}\usebeamercolor[fg]{frametitle}\insertframetitle%
+  \vspace{0.2em}\par%
+  {\color{loomaccent}\hrule height 0.4pt}%
+  \vspace{0.3em}%
+}
+
+\setbeamertemplate{itemize item}{\small$\blacktriangleright$}
+\setbeamertemplate{itemize subitem}{\scriptsize$\triangleright$}
+\setbeamertemplate{caption}[numbered]
+\setbeamerfont{caption}{size=\small}
