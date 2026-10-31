@@ -1,7 +1,7 @@
 """timing and memory helpers."""
 import statistics
 import time
-import tracemalloc
+import sys
 
 
 def median_time(fn, repeats=21, min_sample=2e-3):
@@ -26,13 +26,19 @@ def median_time(fn, repeats=21, min_sample=2e-3):
     return statistics.median(samples)
 
 
-def allocated_bytes(build):
-    """bytes still allocated by the object build() returns (traced python allocations)."""
-    tracemalloc.start()
-    tracemalloc.clear_traces()
-    before = tracemalloc.get_traced_memory()[0]
-    obj = build()
-    after = tracemalloc.get_traced_memory()[0]
-    tracemalloc.stop()
-    del obj
-    return after - before
+def deep_size(obj):
+    """bytes of obj and everything it references, each object counted once.
+    deterministic, unlike tracemalloc, which misses objects served from freelists."""
+    seen, stack, total = set(), [obj], 0
+    while stack:
+        o = stack.pop()
+        if id(o) in seen:
+            continue
+        seen.add(id(o))
+        total += sys.getsizeof(o)
+        if isinstance(o, dict):
+            stack.extend(o.keys())
+            stack.extend(o.values())
+        elif isinstance(o, (list, tuple, set)):
+            stack.extend(o)
+    return total
