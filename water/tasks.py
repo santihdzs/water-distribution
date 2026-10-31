@@ -1,5 +1,6 @@
 """the task chain shared by the notebooks: lengths (t2) -> sectors (t3) -> farthest nodes (t4)
 -> max flow (t5). every notebook calls these so all results come from one implementation."""
+from .flow import dinic, min_cut, pipe_flows
 from .graph import adjacency_list, adjacency_matrix
 from .paths import floyd_warshall, multi_source_dijkstra, path_to
 
@@ -22,6 +23,18 @@ def farthest(net, sec):
     for s, nodes in sec['members'].items():
         t = max(nodes, key=lambda u: (sec['dist'][u], -u))
         out[s] = {'node': t, 'dist': sec['dist'][t], 'route': path_to(sec['parent'], t)}
+    return out
+
+
+def sector_flows(net, sec, far, algorithm=dinic):
+    """t5: max flow from each source to its sector's farthest node, inside the sector."""
+    out = {}
+    for s, f in far.items():
+        pipes = [p for p in sec['kept'] if sec['origin'][p[0]] == s]
+        value, r, stats = algorithm(pipes, s, f['node'])
+        side, cut = min_cut(pipes, r, s)
+        out[s] = {'sink': f['node'], 'value': value, 'cut': cut, 'side': side,
+                  'flows': pipe_flows(pipes, r), 'pipes': pipes, 'stats': stats}
     return out
 
 
