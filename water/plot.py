@@ -69,6 +69,24 @@ def office(ax, net, s=34, **kw):
     return nodes(ax, net, [net.office], color=OFFICE, s=s, marker='D', zorder=5, **kw)
 
 
+def sector_map(ax, net, sec, node_size=12):
+    """nodes and pipes coloured by sector, closed pipes dashed, sources as stars."""
+    color = {s: SECTOR[k] for k, s in enumerate(net.sources)}
+    for s in net.sources:
+        pipes(ax, net, [p for p in sec['kept'] if sec['origin'][p[0]] == s], color=color[s], lw=1.0)
+        nodes(ax, net, [u for u in sec['members'][s] if u != s], color=color[s], s=node_size)
+        nodes(ax, net, [s], color=color[s], s=80, marker='*', zorder=5)
+    pipes(ax, net, sec['closed'], color=INK, lw=0.9, linestyles=(0, (2, 1.5)))
+
+
+def sector_legend(fig, extra=(), y=0.0):
+    h = [plt.Line2D([], [], ls='', marker='o', mfc=SECTOR[0], mec='k', mew=0.4, ms=4, label='sector of 1st source'),
+         plt.Line2D([], [], ls='', marker='o', mfc=SECTOR[1], mec='k', mew=0.4, ms=4, label='sector of 2nd source'),
+         plt.Line2D([], [], ls='', marker='*', mfc='w', mec='k', mew=0.5, ms=9, label='source'),
+         plt.Line2D([], [], color=INK, lw=0.9, ls=(0, (2, 1.5)), label='closed pipe'), *extra]
+    fig.legend(handles=h, loc='upper center', bbox_to_anchor=(0.5, y), ncol=min(len(h), 4))
+
+
 def instance_axes(nets, layout=(('NYT', 'PES'), ('HAN', 'FOS')), width=6.27, extra=0.3):
     """one panel per instance, widths proportional to each network's aspect ratio so all
     panels in a row share a height. extra is vertical room (inches) for titles and legend."""
