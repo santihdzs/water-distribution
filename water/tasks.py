@@ -39,7 +39,7 @@ def sector_flows(net, sec, far, algorithm=dinic):
 
 
 def metric_closure(net):
-    """t6 preprocessing: all-pairs network distances over pipe lengths (floyd-warshall)."""
+    """t2 and t6: all-pairs network distances over pipe lengths (floyd-warshall)."""
     M, ids, index = adjacency_matrix(net)
     D, nxt = floyd_warshall(M)
     return D, nxt, ids, index
