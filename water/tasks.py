@@ -1,8 +1,11 @@
 """the task chain shared by the notebooks: lengths (t2) -> sectors (t3) -> farthest nodes (t4)
 -> max flow (t5). every notebook calls these so all results come from one implementation."""
+import copy
+
 from .flow import dinic, min_cut, pipe_flows
 from .graph import adjacency_list, adjacency_matrix
 from .paths import floyd_warshall, multi_source_dijkstra, path_to
+from .spatial import KDTree
 
 
 def sectorize(net):
@@ -43,3 +46,23 @@ def metric_closure(net):
     M, ids, index = adjacency_matrix(net)
     D, nxt = floyd_warshall(M)
     return D, nxt, ids, index
+
+
+def expand_network(net):
+    """t7: insert each new node in file order, linked to the nearest non-source node of the
+    network as it stands (earlier new nodes are candidates). returns the grown network and
+    one record per insertion."""
+    grown = copy.deepcopy(net)
+    candidates = {u: xy for u, xy in grown.coords.items() if u not in grown.sources}
+    tree = KDTree(candidates)
+    added = []
+    for x, y, cap in net.new:
+        nid = max(grown.coords) + 1
+        target, d, visited = tree.nearest((x, y))
+        grown.coords[nid] = (x, y)
+        grown.pipes.append((nid, target, cap))
+        tree.insert(nid, (x, y))
+        candidates[nid] = (x, y)
+        added.append({'id': nid, 'xy': (x, y), 'capacity': cap, 'target': target,
+                      'dist': d, 'visited': visited})
+    return grown, added
