@@ -32,7 +32,10 @@
 % Tables
 \usepackage{tabularx}
 \usepackage{multirow} 
-\renewcommand{\arraystretch}{1.5}
+\renewcommand{\arraystretch}{1.15}
+\usepackage{booktabs}
+% notebook-generated table bodies; the primitive input is expandable, so \bottomrule may follow it
+\makeatletter\newcommand{\tablebody}[1]{\@@input tables/#1.tex }\makeatother
 
 % Appendix
 \usepackage{appendix} 
@@ -67,7 +70,12 @@
 \include{preamble/contents}
 
 % Sections
-\input{sections/Introduction}
+\input{sections/Problem}
+\input{sections/Datasets}
+\input{sections/Algorithm}
+\input{sections/Implementation}
+\input{sections/Complexity}
+\input{sections/Results}
 \input{sections/Conclusion}
 
 \pagebreak

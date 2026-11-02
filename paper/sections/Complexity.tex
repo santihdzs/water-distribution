@@ -1,0 +1,49 @@
+\section{Complexity analysis}\label{sec:complexity}
+The size parameters are $V$, $E$, the number of sources $|S|$ (2 in every instance), the number of locations to visit $n$ (T6, $n=V$ for the full problem) and the number of candidate connections $n$ (T7). Table~\ref{tab:theory} gives the theoretical cost of each implementation.
+
+\begin{table}[H]
+\centering\small
+\caption{Theoretical complexity of the implementations ($k$: pipes reported by a range query).}\label{tab:theory}
+\begin{tabular}{lll}
+\toprule
+Task & Algorithm & Time; space \\
+\midrule
+T1 & BFS, DFS, components: list; matrix & $O(V+E)$; $O(V^2)$ for both \\
+T2 & all pipe lengths & $O(E)$; $O(E)$ \\
+   & Floyd-Warshall & $O(V^3)$; $O(V^2)$ \\
+   & length query: scan; hash; sorted array & $O(E)$; $O(1)$; $O(\log E+k)$ \\
+T3 & repeated Dijkstra (binary heap) & $O(|S|(V+E)\log V)$; $O(V+E)$ \\
+   & multi-source Dijkstra & $O((V+E)\log V)$; $O(V+E)$ \\
+T4 & farthest node and route, given T3 & $O(V)$; $O(V)$ \\
+T5 & Edmonds-Karp; Dinic & $O(VE^2)$; $O(V^2E)$; space $O(V+E)$ \\
+T6 & metric closure (Floyd-Warshall) & $O(V^3)$; $O(V^2)$ \\
+   & nearest neighbour; one 2-opt pass & $O(n^2)$; $O(n^2)$ \\
+   & branch and bound, MST bound per node & $O(n!\,n^2)$ worst case; $O(n^2)$ \\
+T7 & brute-force query & $O(n)$ \\
+   & 2-d tree build; query; insert & $O(n\log^2n)$; $O(\log n)$ expected; $O(\text{depth})$ \\
+   & graph update: list; matrix & $O(1)$; $O(V^2)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Measurements.} Times are medians of 21 samples (3 for branch and bound), each sample repeating the call for at least 2\,ms, on one machine (Python 3.13, Apple arm64). Four instances with $20\le V\le71$ are too few to show growth, so growth was measured on induced PES sub-networks grown breadth-first from both sources ($V=10$ to 71), on office-nearest subsets for T6 ($k=4$ to 16) and on PES candidate subsets for T7 ($n=5$ to 69). Figure~\ref{fig:performance} compares each curve with its cost model scaled by one fitted constant; Table~\ref{tab:performance} gives the times on the four instances.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{performance.pdf}
+    \caption{Measured times (solid) against the theoretical cost model scaled to the data (dashed). Log-log axes except (d), whose time axis is logarithmic and whose $k$ axis is linear, so exponential growth appears as a straight line.}
+    \label{fig:performance}
+\end{figure}
+
+\begin{table}[H]
+\centering\footnotesize
+\setlength{\tabcolsep}{3pt}
+\caption{Median times in microseconds on the four instances. Comp.: all components on list (L) or matrix (M); EK and Dinic: both sectors' flows; FW: Floyd-Warshall; NN+2opt: full route heuristic; NN brute/tree: one nearest-node query.}\label{tab:performance}
+\begin{tabular}{lrrrrrrrrrrrr}
+\toprule
+\tablebody{performance}
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Agreement with theory.} Most measurements follow their models. Component search grows with log-log slope about 0.9 on the list and 1.8 on the matrix (models 1 and 2), and the matrix is about 17 times slower at $V=71$. Both Dijkstra variants follow $(V+E)\log V$ (slopes about 1.1 and 1.2); repeated Dijkstra does exactly twice the heap operations of the multi-source version and takes 1.4 times as long on the median subset and 2.0 times on full PES, where fixed overheads matter least. Three measurements deviate, for identifiable reasons. Floyd-Warshall grows with slope about 1.8 instead of 3, because each of its $V$ steps is one vectorised NumPy update whose fixed cost dominates while $V^2\le5{,}041$; it performs exactly $V^3$ elementary updates and its curve steepens towards the $V^3$ reference. Edmonds-Karp and Dinic grow almost linearly, far below $O(VE^2)$ and $O(V^2E)$, because every source--sink pair needs at most four augmenting paths, each an $O(E)$ BFS; at this scale Edmonds-Karp is 2.5 times faster, since Dinic's level graph and recursive blocking-flow search only pay off with many augmentations per phase. The matrix insertion grows 4.6 times from $V=10$ to 71, less than $V^2$, because copying a few thousand cells is cheap next to NumPy's allocation cost. Branch and bound is the only exponential cost: its time multiplies by about 1.4 (NYT) to 2.3 (HAN) per added location, reaching about 2\,s at $k=16$ on PES, while NN + 2-opt stays below 0.1\,ms. The 2-d tree query grows logarithmically (3.5 to 11 distance evaluations) and beats brute force from about 30 candidates, but its build only pays for itself after about 20 queries, so for two or three insertions per instance brute force is sufficient.

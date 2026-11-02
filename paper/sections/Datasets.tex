@@ -1,0 +1,16 @@
+\section{Datasets}\label{sec:datasets}
+The four instances provided with the challenge (NYT, HAN, FOS, PES) are text files with a \texttt{V E} header and four sections: \texttt{[NODES]} (\texttt{id x y source\_flag}), \texttt{[EDGES]} (\texttt{u v capacity}), \texttt{[OFFICE]} (office id, T6) and \texttt{[NEW]} (\texttt{x y capacity} of nodes to insert, T7). Node attributes are id, coordinates and source flag; the only edge attribute is the third column, which the slides call the pipe capacity and label as the diameter in their figures \citep{narvaez_slides}. It is used as capacity in T5 and never as length. Table~\ref{tab:datasets} summarises the instances.
+
+\begin{table}[H]
+\centering\small
+\caption{Instances after validation. Loops: independent cycles $E-V+1$; Caps.: distinct capacity values.}\label{tab:datasets}
+\begin{tabular}{lrrrrrrrrrr}
+\toprule
+\tablebody{datasets}
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Validation.} The loader logs, instead of failing on, malformed or non-finite values, pipes to unknown nodes, self-loops, non-positive capacities, repeated pipes, coincident coordinates, id gaps, header mismatches, a missing office, and \texttt{[NEW]} points outside the network's bounding box enlarged by 50\%. No value is missing or invalid, but three things are unexpected. PES lists pipe 28--30 twice (as \texttt{28 30} and \texttt{30 28}, same capacity); it is kept once, so PES has 98 pipes, not the declared 99, and that pipe's capacity is not doubled in T5. PES ids have 18 gaps, handled by an id-to-index map. NYT's second \texttt{[NEW]} point $(6478,3050)$ lies about five network widths east of NYT and equals HAN's second entry, so it is treated as a copy error and not inserted.
+
+\paragraph{Structure.} All instances are connected and have two sources. NYT and HAN are almost trees, FOS and PES are meshed. Six of the eight sources are leaves (both in NYT and HAN, 37 in FOS, 7 in PES), joined to the network by a single pipe. All four networks are very sparse, with density $2E/(V(V-1))$ between 0.039 (PES) and 0.111 (NYT).

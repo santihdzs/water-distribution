@@ -1,0 +1,11 @@
+\section{Problem definition}\label{sec:problem}
+A water distribution network is an undirected graph $G=(V,E)$ whose vertices are junctions with coordinates $p_v\in\mathbb{R}^2$, a subset $S\subseteq V$ of which are sources, and whose edges are pipes with a capacity $c(u,v)>0$. The length of a pipe is $\ell(u,v)=\lVert p_u-p_v\rVert_2$ and $d_G(u,v)$ denotes the shortest-path distance under $\ell$. The Water Graph Problem \citep{narvaez_slides} poses seven questions on this model, and the situation problem brief \citep{tc2038_brief} asks each student to investigate one of them. With the instructor's approval, this report covers all seven as a single study, because their results feed each other: lengths define distances, distances define sectors, sectors define the flow problems.
+\begin{enumerate}
+    \item[\textbf{T1}] \textbf{Representation.} Build adjacency-list and adjacency-matrix representations, explore $G$ with BFS and DFS, find its connected components, and compare time and memory of both representations.
+    \item[\textbf{T2}] \textbf{Pipe lengths.} Compute $\ell(u,v)$ for every pipe, the shortest, longest and total length, and compare straight-line distance $\lVert p_u-p_v\rVert$ with network distance $d_G(u,v)$.
+    \item[\textbf{T3}] \textbf{Sectorization.} Assign every node to $\sigma(v)=\arg\min_{s\in S}d_G(s,v)$ and find the pipes to close: $C=\{(u,v)\in E:\sigma(u)\neq\sigma(v)\}$.
+    \item[\textbf{T4}] \textbf{Freshness.} Water age is proportional to $d_G$. For each sector $V_s=\sigma^{-1}(s)$ find the farthest node $t_s=\arg\max_{v\in V_s}d_G(s,v)$, its distance and its route.
+    \item[\textbf{T5}] \textbf{Maximum flow.} In each sector, maximise the flow from $s$ to $t_s$ subject to $|f(u,v)|\le c(u,v)$ and flow conservation, and identify the bottleneck pipes.
+    \item[\textbf{T6}] \textbf{Sampling route.} Find a minimum-length closed walk that starts and ends at the node labelled office and visits every node. Nodes and pipes may be repeated, since $G$ need not contain a Hamiltonian cycle.
+    \item[\textbf{T7}] \textbf{Expansion.} Link a new point $q$ by one pipe to its nearest non-source node, $\arg\min_{v\in V\setminus S}\lVert p_v-q\rVert$, and update both representations.
+\end{enumerate}
