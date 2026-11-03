@@ -38,7 +38,7 @@ def table(name, rows, header, fmt):
     """write a tabular body for the report: header row, midrule, then rows formatted by fmt."""
     TABLES.mkdir(parents=True, exist_ok=True)
     lines = [' & '.join(header) + r' \\ \midrule']
-    lines += [' & '.join(f.format(v) for f, v in zip(fmt, r)) + r' \\' for r in rows]
+    lines += [' & '.join(f.format(v).replace('%', r'\%') for f, v in zip(fmt, r)) + r' \\' for r in rows]
     (TABLES / f'{name}.tex').write_text('\n'.join(lines) + '\n')
 
 
