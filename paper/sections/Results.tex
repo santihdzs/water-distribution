@@ -1,8 +1,8 @@
 \section{Results}\label{sec:results}
 
-\paragraph{T1: representation.} Every instance is one connected component, so every junction can be supplied by some source. BFS on the matrix is 8.3 (NYT) to 22.6 (PES) times slower than on the list, because each visited vertex scans a full row. Memory is close at this size: a list entry is a Python tuple plus a float (about 120 bytes per pipe end) against 8 bytes per matrix cell, so the list is slightly larger on NYT (5.7 against 4.7 KiB), but the matrix grows quadratically and doubles the list on PES (44.6 against 23.3 KiB). The matrix only wins the pipe-existence query (67 against about 135 ns), so the list is the working representation and the matrix is used only for all-pairs tables.
+\paragraph{T1: representation.} Every instance is one connected component, so every junction can be supplied by some source. BFS on the matrix is about 8 (NYT) to more than 20 (PES) times slower than on the list, because each visited vertex scans a full row. Memory is close at this size: a list entry is a Python tuple plus a float (about 120 bytes per pipe end) against 8 bytes per matrix cell, so the list is slightly larger on NYT (5.7 against 4.7 KiB), but the matrix grows quadratically and doubles the list on PES (44.6 against 23.3 KiB). The matrix only wins the pipe-existence query (67 against about 135 ns), so the list is the working representation and the matrix is used only for all-pairs tables.
 
-\paragraph{T2: pipe lengths.} Table~\ref{tab:lengths} gives the length statistics. Length and capacity are distinct attributes (correlation $-0.65$ to $+0.13$). The FOS mesh keeps every pair within 1.75 times its straight-line distance, while NYT and HAN reach 4.73 and 3.32. PES is extreme: nodes 19 and 39 are 147 units apart but 4,146 by pipe, because PES is two dense clusters joined by few pipes. On average network distances are 19\% (FOS) to 83\% (PES) longer than straight lines, which is why T3 and T4 use $d_G$. The hash index answers a length query in 0.09\,\textmu s against 6.5\,\textmu s for a scan, and the sorted array finds the 9 PES pipes longer than 1,000 with 7 comparisons instead of 98.
+\paragraph{T2: pipe lengths.} Table~\ref{tab:lengths} gives the length statistics. Length and capacity are distinct attributes (correlation $-0.65$ to $+0.13$). The FOS mesh keeps every pair within 1.75 times its straight-line distance, while NYT and HAN reach 4.73 and 3.32. PES is extreme: nodes 19 and 39 are 147 units apart but 4,146 by pipe, because PES is two dense clusters joined by few pipes. On average network distances are 19\% (FOS) to 83\% (PES) longer than straight lines, which is why T3 and T4 use $d_G$. The hash index answers a length query in under 0.1\,\textmu s against about 7\,\textmu s for a scan, and the sorted array finds the 9 PES pipes longer than 1,000 with 7 comparisons instead of 98.
 
 \begin{table}[H]
 \centering\small
@@ -14,7 +14,7 @@
 \end{tabular}
 \end{table}
 
-\paragraph{T3: sectors.} Figure~\ref{fig:freshness} shows the sectors (sizes in Table~\ref{tab:chain}). The pipes to close are 2--3, 11--9 and 20--16 in NYT; 7--8 and 14--15 in HAN; 18--19 and 19--20 in PES; and eight in the FOS mesh: 3--4, 28--9, 11--19, 27--16, 11--26, 16--29, 26--27 and 28--29. HAN's sectors are the most unequal (7 against 25 nodes) because source 13 sits behind a single 1,683-unit pipe at the network's edge. Multi-source Dijkstra used exactly half the heap operations of the repeated version (76 against 155 pops on PES).
+\paragraph{T3: sectors.} Figure~\ref{fig:freshness} shows the sectors (sizes in Table~\ref{tab:chain}). The pipes to close are 2--3, 11--9 and 20--16 in NYT; 7--8 and 14--15 in HAN; 18--19 and 19--20 in PES; and eight in the FOS mesh: 3--4, 28--9, 11--19, 27--16, 11--26, 16--29, 26--27 and 28--29. HAN's sectors are the most unequal (7 against 25 nodes) because source 13 sits behind a single 1,683-unit pipe at the network's edge. Multi-source Dijkstra performed exactly half the relaxations of the repeated version (196 against 392 on PES) and about half the heap pops.
 
 \begin{figure}[H]
     \centering
@@ -44,7 +44,7 @@
     \label{fig:flows}
 \end{figure}
 
-\paragraph{T6: sampling routes.} Table~\ref{tab:routes} compares the methods. NYT is solved exactly: the optimal walk has length 7,072 over 24 pipe traversals and walks both source branches there and back (Figure~\ref{fig:routes}a). For HAN, FOS and PES branch and bound does not finish within 60\,s, so their routes are 2-opt local optima, approximate and not certified: the MST bound is weak, especially on the near-tree HAN, where a walk traverses most pipes twice but the MST counts them once. On office-nearest subsets of $k=4,6,\dots$ nodes, solved exactly up to $k=18$ to 24, nearest neighbour is on average 15.9\% above the optimum (worst 37.8\%) and 2-opt 1.8\% (worst 15.8\%), optimal in 31 of 39 subsets (Figure~\ref{fig:routes}c).
+\paragraph{T6: sampling routes.} Table~\ref{tab:routes} compares the methods. NYT is solved exactly: the optimal walk has length 7,072 over 24 pipe traversals and walks both source branches there and back (Figure~\ref{fig:routes}a). For HAN, FOS and PES branch and bound does not finish within 60\,s, so their routes are 2-opt local optima, approximate and not certified: the MST bound is weak because it counts each connection once, while the walk must come back out of every dead end (HAN: 43 traversals of 34 pipes). On office-nearest subsets of $k=4,6,\dots$ nodes, solved exactly up to $k=18$ to 24, nearest neighbour is on average 15.9\% above the optimum (worst 37.8\%) and 2-opt 1.8\% (worst 15.8\%), optimal in 31 of 39 subsets (Figure~\ref{fig:routes}c).
 
 \begin{table}[H]
 \centering\small
@@ -61,6 +61,15 @@
     \includegraphics[width=\textwidth]{routes.pdf}
     \caption{T6. (a) Optimal NYT walk (7,072) and (b) best FOS walk found (30,424) from the office; pipes walked twice are highlighted. (c) Gap of nearest neighbour (dashed) and NN + 2-opt (solid) to the branch-and-bound optimum on office-nearest subsets.}
     \label{fig:routes}
+\end{figure}
+
+\paragraph{T6 extension: a selection hyper-heuristic.} A hyper-heuristic searches over heuristics rather than solutions: a high-level rule chooses, at each step, which low-level heuristic to apply, and an acceptance criterion decides whether to keep the result. Here four random tour moves (2-opt segment reversal, swap, relocate, and or-opt block moves of 2 or 3 locations) are selected either uniformly or adaptively, by probability matching on each move's recent success rate with a 5\% floor. Candidates are accepted by late acceptance hill climbing (no worse than the current tour or than the tour 50 steps earlier). Each run makes 30,000 moves from the nearest-neighbour tour; each configuration is run with 10 seeds and compared with every move used alone under the same acceptance and budget (\texttt{09\_hyper\_heuristic}). All 840 runs return valid tours, none below a proven optimum. On the 11 problems with a proven optimum (Figure~\ref{fig:hh}b) both hyper-heuristics average about 0.2\% above it and are optimal in about 94\% of runs, slightly ahead of the best single move (2-opt alone, 0.29\%) and with a smaller worst case (4.66\% against 7.96\%); nearest neighbour plus 2-opt averages 1.73\%. A run takes about 0.17\,s. Their main gain is consistency on the full instances: random selection reaches the best known HAN and FOS routes in every run, whereas 2-opt alone has medians 2.2\% and 5.5\% above them. On PES it finds the shortest route of the study, 34,700, 2.3\% below the T6 route, although its median is slightly worse than 2-opt alone (Figure~\ref{fig:hh}a). Adaptive selection ends up nearly uniform (about 25\% per move) and brings no benefit, because near a local optimum all moves rarely improve and their credit decays to the same floor. The routes remain uncertified for HAN, FOS and PES.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{hyperheuristic.pdf}
+    \caption{Selection hyper-heuristic for T6. (a) Best PES route over the run (median of 10 seeds) for each move alone (dashed) and for the hyper-heuristics (solid). (b) Mean gap to the proven optimum.}
+    \label{fig:hh}
 \end{figure}
 
 \paragraph{T7: expansion.} Table~\ref{tab:expansion} lists the insertions (Figure~\ref{fig:expansion}). The FOS point $(7071,9055)$ becomes node 38 linked to node 17, the connection drawn in the challenge slides. No new node is closest to an earlier new node, so insertion order does not matter here. On 2,000 random queries the 2-d tree evaluated on average 6.7 of 18 candidates on NYT and 11.0 of 69 on PES. Each insertion writes three list entries, whereas the matrix copies the whole table (10,225 cells for the two PES insertions).
