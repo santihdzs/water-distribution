@@ -61,11 +61,12 @@ def _mst(sub):
     return total
 
 
-def branch_and_bound(D, start=0, incumbent=None, time_limit=None):
+def branch_and_bound(D, start=0, incumbent=None, time_limit=None, node_limit=None):
     """exact depth-first branch and bound over partial routes from the office.
     bound(partial) = cost so far + mst(unvisited) + min pipe current->unvisited + min unvisited->office,
-    which never exceeds the cost of any completion. returns the best tour, its cost, whether
-    optimality was proven (search finished), the root lower bound and search counters."""
+    which never exceeds the cost of any completion. the search stops after time_limit seconds or
+    node_limit expanded nodes (the latter is machine independent). returns the best tour, its cost,
+    whether optimality was proven (search finished), the root lower bound and search counters."""
     n = len(D)
     best = list(incumbent) if incumbent else nearest_neighbor(D, start)
     best_cost = tour_length(D, best)
@@ -86,7 +87,7 @@ def branch_and_bound(D, start=0, incumbent=None, time_limit=None):
         nonlocal best, best_cost, timed_out
         if timed_out:
             return
-        if time_limit and time.perf_counter() - t0 > time_limit:
+        if (time_limit and time.perf_counter() - t0 > time_limit) or (node_limit and stats['expanded'] >= node_limit):
             timed_out = True
             return
         stats['expanded'] += 1

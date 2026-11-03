@@ -1,12 +1,14 @@
 \section{Results}\label{sec:results}
 
-\paragraph{T1: representation.} Every instance is one connected component, so every junction can be supplied by some source. BFS on the matrix is about 8 (NYT) to more than 20 (PES) times slower than on the list, because each visited vertex scans a full row. Memory is close at this size: a list entry is a Python tuple plus a float (about 120 bytes per pipe end) against 8 bytes per matrix cell, so the list is slightly larger on NYT (5.7 against 4.7 KiB), but the matrix grows quadratically and doubles the list on PES (44.6 against 23.3 KiB). The matrix only wins the pipe-existence query (67 against about 135 ns), so the list is the working representation and the matrix is used only for all-pairs tables.
+\subsection{T1: representation}
+Every instance is a single connected component, so every junction can be supplied by at least one source. BFS on the adjacency matrix is about 8 (NYT) to more than 20 (PES) times slower than on the adjacency list, and the gap grows with $V$ because each visited vertex scans a full row of the matrix. Memory is closer than the asymptotic costs suggest at this size: each list entry is a Python tuple holding a neighbour and a float, 115 to 140 bytes per pipe end, against 8 bytes per matrix cell (the matrix totals also include the id-to-index map). The list is therefore slightly larger on NYT (5.7 against 4.7 KiB), but the matrix grows quadratically and is already twice the size of the list on PES (44.6 against 23.3 KiB). The matrix only wins the query ``is there a pipe between $u$ and $v$'' (about 67 against 135\,ns). Since no task needs that query in an inner loop, the list is the working representation for traversal, Dijkstra and flow, and the matrix is used only where an all-pairs table is the goal (Floyd-Warshall).
 
-\paragraph{T2: pipe lengths.} Table~\ref{tab:lengths} gives the length statistics. Length and capacity are distinct attributes (correlation $-0.65$ to $+0.13$). The FOS mesh keeps every pair within 1.75 times its straight-line distance, while NYT and HAN reach 4.73 and 3.32. PES is extreme: nodes 19 and 39 are 147 units apart but 4,146 by pipe, because PES is two dense clusters joined by few pipes. On average network distances are 19\% (FOS) to 83\% (PES) longer than straight lines, which is why T3 and T4 use $d_G$. The hash index answers a length query in under 0.1\,\textmu s against about 7\,\textmu s for a scan, and the sorted array finds the 9 PES pipes longer than 1,000 with 7 comparisons instead of 98.
+\subsection{T2: pipe lengths}
+Table~\ref{tab:lengths} gives the length statistics; the total is the length of pipe each utility maintains. Length and capacity carry different information: their correlation ranges from $-0.65$ (NYT) to $+0.13$ (HAN), so a long pipe is not necessarily a large one. Circuity separates the instances. The FOS mesh keeps every pair of nodes within 1.75 times its straight-line distance, while the near-trees NYT and HAN reach 4.73 and 3.32, because some nodes that are close on the map are joined only around the tree. PES is the extreme case: nodes 19 and 39 are 147 units apart but 4,146 units apart by pipe, because PES consists of two dense clusters joined by very few pipes. Averaged over all node pairs, the route through the pipes is 19\% (FOS) to 83\% (PES) longer than the straight line, so straight-line distance would badly underestimate water travel, which is why T3 and T4 use $d_G$. A pipe is always the shortest route between its own endpoints, since a straight segment cannot be beaten by a polyline. For queries, the hash index answers a length lookup in under 0.1\,\textmu s against about 7\,\textmu s for a scan of the PES pipe list, and the sorted array finds the 9 PES pipes longer than 1,000 units with 7 comparisons instead of 98.
 
 \begin{table}[H]
 \centering\small
-\caption{Pipe lengths (coordinate units) and circuity $d_G/\lVert p_u-p_v\rVert$ over all node pairs.}\label{tab:lengths}
+\caption{Pipe lengths in coordinate units. Shortest and Longest give the pipe and its length $\ell$; Circ.: circuity $d_G(u,v)/\lVert p_u-p_v\rVert$, mean and maximum over all node pairs.}\label{tab:lengths}
 \begin{tabular}{lrrlrlrrrr}
 \toprule
 \tablebody{lengths}
@@ -14,41 +16,75 @@
 \end{tabular}
 \end{table}
 
-\paragraph{T3: sectors.} Figure~\ref{fig:freshness} shows the sectors (sizes in Table~\ref{tab:chain}). The pipes to close are 2--3, 11--9 and 20--16 in NYT; 7--8 and 14--15 in HAN; 18--19 and 19--20 in PES; and eight in the FOS mesh: 3--4, 28--9, 11--19, 27--16, 11--26, 16--29, 26--27 and 28--29. HAN's sectors are the most unequal (7 against 25 nodes) because source 13 sits behind a single 1,683-unit pipe at the network's edge. Multi-source Dijkstra performed exactly half the relaxations of the repeated version (196 against 392 on PES) and about half the heap pops.
+\subsection{T3: sectorization}
+Table~\ref{tab:assignments} lists the nodes assigned to each source, and Figure~\ref{fig:freshness} maps them. Each sector is the service area its source supplies when the network is operated as independent districts. The pipes to close are 2-3, 11-9 and 20-16 in NYT; 7-8 and 14-15 in HAN; 18-19 and 19-20 in PES; and eight in the FOS mesh: 3-4, 28-9, 11-19, 27-16, 11-26, 16-29, 26-27 and 28-29. The number of closures reflects how meshed the network is where the two service areas meet: two or three in the tree-like NYT and HAN and in PES, whose clusters meet in a narrow band, against eight in FOS. HAN's sectors are the most unequal (7 against 25 nodes), because source 13 sits behind a single 1,683-unit pipe at the edge of the network, so most nodes are closer to source 1. No node is exactly equidistant from both sources, so the tie-breaking rule never applies. Multi-source Dijkstra performed exactly half the relaxations of the repeated version (196 against 392 on PES) and about half the heap removals.
+
+\begin{table}[H]
+\centering\small
+\caption{T3 node assignments: the nodes of each sector, identified by its source.}\label{tab:assignments}
+\begin{tabular}{lrrp{10.4cm}}
+\toprule
+\tablebody{assignments}
+\bottomrule
+\end{tabular}
+\end{table}
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.92\textwidth]{freshness.pdf}
-    \caption{T3 and T4. Sectors from multi-source Dijkstra (colour), closed pipes (dashed) and the shortest route from each source to the node of its sector that receives the oldest water.}
+    \caption{T3 and T4. Sectors from multi-source Dijkstra (node and pipe colour), closed pipes (dashed) and the shortest route from each source to the node of its sector that receives the oldest water.}
     \label{fig:freshness}
 \end{figure}
 
-\paragraph{T4: freshness.} Table~\ref{tab:chain} gives each sector's farthest node and distance; routes are drawn in Figure~\ref{fig:freshness} and listed in \texttt{04\_freshness}. Four of the eight (NYT 3 and 2, HAN 8, FOS 3) sit at a closed pipe, where the two supply areas meet; the others lie at the far end of their sector. Column ``Before'' divides the source's farthest distance in the open network by $d_G(s,t_s)$: sectorization reduces the worst water age a source is responsible for by 1.49 to 2.25 times in FOS and PES and by 2.75 times for HAN source 13; HAN source 1 is unaffected. Per node nothing changes, since closing $C$ leaves every distance to the node's own source intact.
+\subsection{T4: freshness}
+The sectors are those of T3, obtained by multi-source Dijkstra over pipe lengths. Table~\ref{tab:chain} gives each sector's farthest node and distance, and Table~\ref{tab:farroutes} the route to it, also drawn in Figure~\ref{fig:freshness}. These nodes receive the oldest water and are the natural places to monitor water quality or to flush. Four of the eight (NYT 3 and 2, HAN 8 and FOS 3) are endpoints of a closed pipe, where the two service areas meet; the other four lie at the far end of their sector (PES 10 is a leaf, HAN 31 the western corner of the network).
 
 \begin{table}[H]
 \centering\small
-\caption{Results chained per sector: size (T3), farthest node and distance (T4), maximum flow, capacity of the T4 route alone and minimum cut (T5).}\label{tab:chain}
-\begin{tabular}{lrrrrrrrp{3.3cm}}
+\caption{T4 routes from each source $s$ to its farthest node $t_s$, as node sequences.}\label{tab:farroutes}
+\begin{tabular}{lrrl}
+\toprule
+\tablebody{farroutes}
+\bottomrule
+\end{tabular}
+\end{table}
+
+Distances change with sectorization in one sense only. Per node nothing changes: closing $C$ leaves every node's distance to its own source intact (Section~\ref{sec:algorithm}), so no node receives older water after sectorization. Per source, the comparison is with the farthest node the source would have to reach if it supplied the whole open network alone. Column ``Before'' of Table~\ref{tab:chain} gives that distance divided by $d_G(s,t_s)$: sectorization reduces the worst water age each source is responsible for by a factor of 1.49 to 2.25 in FOS and PES and by 2.75 for HAN source 13, which alone would have to reach node 29 at 13,638 units. HAN source 1 is unaffected (1.00), because its farthest node is the same with or without the other source.
+
+\begin{table}[H]
+\centering\footnotesize
+\setlength{\tabcolsep}{3pt}
+\caption{Results per sector. $s$: source; $|V_s|$: sector size (T3); $t_s$ and $d_G(s,t_s)$: farthest node and its distance (T4); Before: farthest distance from $s$ in the open network divided by $d_G(s,t_s)$; Max flow: maximum flow from $s$ to $t_s$ inside the sector (T5); Route: capacity of the T4 route alone, that is, of its narrowest pipe; Min cut: the saturated bottleneck pipes, with their capacities.}\label{tab:chain}
+\begin{tabular}{lrrrrrrrl}
 \toprule
 \tablebody{chain}
 \bottomrule
 \end{tabular}
 \end{table}
 
-\paragraph{T5: maximum flow.} In six of the eight sectors the minimum cut is the single pipe at a leaf source (NYT, HAN, PES source 7) or leaf sink (PES 10), so the rest of the sector does not affect throughput. Comparing with the T4 route shows the difference between the two problems: PES source 1's shortest route carries only 101, but a second route into node 11 lets 151 reach node 10, and in the FOS mesh three disjoint bottleneck pipes carry 55 against 19 on the shortest route, and 58.8 against 17 in the other sector (Figure~\ref{fig:flows}). Making the cut pipes unlimited shows how capacity constrains the flow: the gain is nil in HAN, where every route is a chain of 16-capacity pipes, and reaches 3.6 times for FOS source 37 (58.8 to 211). Edmonds-Karp and Dinic always agree, with at most 4 augmenting paths.
+\subsection{T5: maximum flow}
+Table~\ref{tab:chain} and Figure~\ref{fig:flows} give the maximum flow from each source to its sector's farthest node. In six of the eight sectors the minimum cut is a single pipe at a leaf: the only pipe leaving the source (NYT, HAN and PES source 7) or entering the sink (PES 10). There the rest of the sector does not affect throughput, and in five of these six sectors the maximum flow equals what the T4 route carries on its own. Comparing with that route shows concretely that the two problems differ. The shortest route of PES source 1 is limited to 101 by one pipe, but a second route into node 11 lets 151 units reach node 10, saturating the sink's pipe. In the FOS mesh the sector of source 7 is limited by three disjoint pipes that together carry 55, against 19 on the shortest route alone, and the sector of source 37 carries 58.8 against 17.
+
+To see how capacities constrain the flow, the cut pipes were made unlimited and the flow was recomputed; the new value is set by the next bottleneck. The gain is nil in HAN, where every route is a chain of capacity-16 pipes and the next cut is again 16, so upgrading one pipe would achieve nothing. Elsewhere it ranges from 15\% (FOS source 7, 55 to 63) to a factor of 3.6 (FOS source 37, 58.8 to 211), which tells an engineer which pipes to enlarge first and how much would be gained. Edmonds-Karp and Dinic always return the same value; no sector needed more than 4 augmenting paths, and Dinic no more than 3 phases.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{flows.pdf}
-    \caption{T5 on the two meshed instances. Pipe width is proportional to flow; saturated minimum-cut pipes are highlighted. Titles give each sector's maximum flow.}
+    \caption{T5 on the two meshed instances. Pipe width is proportional to the flow it carries; saturated minimum-cut pipes are highlighted. Panel titles give the maximum flow of each sector. In NYT and HAN the cut is the single pipe at the source (Table~\ref{tab:chain}).}
     \label{fig:flows}
 \end{figure}
 
-\paragraph{T6: sampling routes.} Table~\ref{tab:routes} compares the methods. NYT is solved exactly: the optimal walk has length 7,072 over 24 pipe traversals and walks both source branches there and back (Figure~\ref{fig:routes}a). For HAN, FOS and PES branch and bound does not finish within 60\,s, so their routes are 2-opt local optima, approximate and not certified: the MST bound is weak because it counts each connection once, while the walk must come back out of every dead end (HAN: 43 traversals of 34 pipes). On office-nearest subsets of $k=4,6,\dots$ nodes, solved exactly up to $k=18$ to 24, nearest neighbour is on average 15.9\% above the optimum (worst 37.8\%) and 2-opt 1.8\% (worst 15.8\%), optimal in 31 of 39 subsets (Figure~\ref{fig:routes}c).
+\subsection{T6: sampling routes}
+Table~\ref{tab:routes} compares the three methods on the full instances. NYT is solved exactly: the optimal walk from the office (node 5) has length 7,072 and traverses 24 pipes,
+\begin{center}
+\small 5-4-3-2-1-15-14-13-12-18-19-18-12-11-20-16-9-10-17-10-9-8-7-6-5,
+\end{center}
+going out and back along the two branches that end at the sources (Figure~\ref{fig:routes}a). The walk is longer than the network's total pipe length (6,020) because those dead ends must be walked twice. For HAN, FOS and PES branch and bound does not finish within 60\,s, so their routes are NN + 2-opt local optima: approximate and not certified. The hyper-heuristic of Section~\ref{sec:hh-results} later shortens the PES route to 34,700; the other two are not improved. The expanded walks of all four instances are listed in Appendix~\ref{app:walks}. The root lower bound is too weak to close the gap, because the MST counts each connection once while the walk must come back out of every dead end (HAN needs 43 traversals of its 34 pipes).
 
 \begin{table}[H]
-\centering\small
-\caption{Sampling routes. 2-opt gap: relative to the optimum when proven, otherwise an upper bound relative to the root lower bound. Walk pipes: pipe traversals of the expanded route.}\label{tab:routes}
+\centering\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{Sampling routes on the full instances (lengths in coordinate units). NN: nearest neighbour; NN + 2-opt: 2-opt local search from the NN tour; B\&B: best tour after branch and bound; Status: optimal if the search finished within 60\,s; Lower bound: bound at the root of the search; NN + 2-opt gap: how far the NN + 2-opt route lies above the optimum when the optimum is proven, and otherwise an upper limit ($\le$) computed against the lower bound, which is loose because the bound is weak; Walk pipes: pipe traversals of the expanded walk.}\label{tab:routes}
 \begin{tabular}{lrrrrlrrr}
 \toprule
 \tablebody{routes}
@@ -56,27 +92,33 @@
 \end{tabular}
 \end{table}
 
+To measure the heuristics where the optimum can be computed, the problem was restricted to the $k$ nodes closest to the office (by network distance, office included, walking on the full network) for $k=4,6,\dots$ until a subset needed more than 100,000 search nodes (a machine-independent budget; at most 300,000 per subset); this solved subsets of up to 18 (PES) to 26 (FOS) nodes. On the 40 solved subsets nearest neighbour is on average 16.0\% above the optimum (worst 37.8\%) and NN + 2-opt 1.9\% (worst 15.8\%), reaching the optimum in 31 of them (Figure~\ref{fig:routes}c). On the full instances the nearest-neighbour route is 7\% (HAN) to 32\% (FOS) longer than the NN + 2-opt route, which needs between 1 and 11 improving exchanges.
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{routes.pdf}
-    \caption{T6. (a) Optimal NYT walk (7,072) and (b) best FOS walk found (30,424) from the office; pipes walked twice are highlighted. (c) Gap of nearest neighbour (dashed) and NN + 2-opt (solid) to the branch-and-bound optimum on office-nearest subsets.}
+    \caption{T6. (a) Optimal NYT walk (7,072) and (b) best FOS walk found by NN + 2-opt (30,424), both from the office and expanded into real pipes; pipes walked twice are highlighted. (c) Gap to the branch-and-bound optimum of nearest neighbour (dashed) and NN + 2-opt (solid) on office-nearest subsets of $k$ nodes.}
     \label{fig:routes}
 \end{figure}
 
-\paragraph{T6 extension: a selection hyper-heuristic.} A hyper-heuristic searches over heuristics rather than solutions: a high-level rule chooses, at each step, which low-level heuristic to apply, and an acceptance criterion decides whether to keep the result. Here four random tour moves (2-opt segment reversal, swap, relocate, and or-opt block moves of 2 or 3 locations) are selected either uniformly or adaptively, by probability matching on each move's recent success rate with a 5\% floor. Candidates are accepted by late acceptance hill climbing (no worse than the current tour or than the tour 50 steps earlier). Each run makes 30,000 moves from the nearest-neighbour tour; each configuration is run with 10 seeds and compared with every move used alone under the same acceptance and budget (\texttt{09\_hyper\_heuristic}). All 840 runs return valid tours, none below a proven optimum. On the 11 problems with a proven optimum (Figure~\ref{fig:hh}b) both hyper-heuristics average about 0.2\% above it and are optimal in about 94\% of runs, slightly ahead of the best single move (2-opt alone, 0.29\%) and with a smaller worst case (4.66\% against 7.96\%); nearest neighbour plus 2-opt averages 1.73\%. A run takes about 0.17\,s. Their main gain is consistency on the full instances: random selection reaches the best known HAN and FOS routes in every run, whereas 2-opt alone has medians 2.2\% and 5.5\% above them. On PES it finds the shortest route of the study, 34,700, 2.3\% below the T6 route, although its median is slightly worse than 2-opt alone (Figure~\ref{fig:hh}a). Adaptive selection ends up nearly uniform (about 25\% per move) and brings no benefit, because near a local optimum all moves rarely improve and their credit decays to the same floor. The routes remain uncertified for HAN, FOS and PES.
+\subsection{Hyper-heuristic for T6}\label{sec:hh-results}
+The hyper-heuristic of Section~\ref{sec:hh-design} was run with 10 seeds per configuration on 14 problems: the 11 with a proven optimum (full NYT and office-nearest subsets of 12, 16 and 20 nodes where branch and bound finishes within 300,000 search nodes) and the full HAN, FOS and PES instances (\texttt{09\_hyper\_heuristic}). All 840 runs return valid tours and none is shorter than a proven optimum. On the problems with a proven optimum (Figure~\ref{fig:hh}b) both hyper-heuristics average about 0.2\% above it and are optimal in about 94\% of runs, slightly ahead of the best single move (LAHC 2-opt move, 0.29\%) and with a smaller worst case (4.66\% against 7.96\%), while the deterministic NN + 2-opt averages 1.73\%. The swap and relocate moves alone stay 11 to 14\% above the optimum, because they cannot undo crossing legs, which a 2-opt move removes directly.
+
+The main gain is consistency on the full instances. The random-selection hyper-heuristic reaches the best known HAN and FOS routes (40,810 and 30,424) in 9 and 6 of its 10 runs, so its median equals the best, whereas the LAHC 2-opt move alone reaches them in 3 and 2 runs and has medians 2.2\% and 5.5\% above them. On PES it finds the shortest route of the study, 34,700, 2.3\% below the T6 route, although its median over seeds (35,200) is slightly worse than that of the LAHC 2-opt move alone (35,064), so mixing in weaker moves costs some consistency there (Figure~\ref{fig:hh}a). Adaptive selection ends up choosing the four moves almost uniformly (about 25\% each) and brings no benefit over random selection: near a local optimum every move rarely improves the tour, so the credit of each decays to the same floor and the rule cannot tell them apart. A run of 30,000 iterations takes about 0.17\,s. The HAN, FOS and PES routes remain uncertified.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{hyperheuristic.pdf}
-    \caption{Selection hyper-heuristic for T6. (a) Best PES route over the run (median of 10 seeds) for each move alone (dashed) and for the hyper-heuristics (solid). (b) Mean gap to the proven optimum.}
+    \caption{Selection hyper-heuristic for T6. (a) Best PES route over the run (median of 10 seeds) for each move used alone under LAHC (dashed) and for the hyper-heuristics (solid); the dotted line is the deterministic NN + 2-opt route. (b) Mean gap to the proven optimum over the 11 problems where it is known.}
     \label{fig:hh}
 \end{figure}
 
-\paragraph{T7: expansion.} Table~\ref{tab:expansion} lists the insertions (Figure~\ref{fig:expansion}). The FOS point $(7071,9055)$ becomes node 38 linked to node 17, the connection drawn in the challenge slides. No new node is closest to an earlier new node, so insertion order does not matter here. On 2,000 random queries the 2-d tree evaluated on average 6.7 of 18 candidates on NYT and 11.0 of 69 on PES. Each insertion writes three list entries, whereas the matrix copies the whole table (10,225 cells for the two PES insertions).
+\subsection{T7: expansion}
+Table~\ref{tab:expansion} lists the insertions and Figure~\ref{fig:expansion} the expanded networks. The FOS point $(7071,9055)$ becomes node 38 linked to node 17, the connection drawn in the challenge slides. Each new connection is a single pipe of 150 to 809 units, of the same order as the existing pipes (Table~\ref{tab:lengths}), so every new node is served by extending the network at one junction; sources are never used as connection points. No new node lands closest to an earlier new node, so the insertion order does not change any connection. On 2,000 random queries the 2-d tree evaluated on average 6.7 of the 18 candidates on NYT and 11.0 of the 69 on PES, and the fraction falls as the network grows. Each insertion writes one key and two entries into the adjacency list, whereas the matrix copies its whole table (10,225 cells for the two PES insertions).
 
 \begin{table}[H]
 \centering\small
-\caption{New nodes, their nearest non-source node and the distance evaluations of each search.}\label{tab:expansion}
+\caption{New nodes in file order. Linked to: nearest non-source node; Length: new pipe length; Capacity: third value of the record; Tree eval. and Brute eval.: distance evaluations of the 2-d tree and of brute force.}\label{tab:expansion}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{lrlrrrrr}
 \toprule
@@ -87,7 +129,7 @@
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{expansion.pdf}
-    \caption{T7. Expanded networks: each new node is linked to its nearest non-source node.}
+    \includegraphics[width=0.92\textwidth]{expansion.pdf}
+    \caption{T7. Expanded networks: each new node (labelled with its id) is linked to its nearest non-source node.}
     \label{fig:expansion}
 \end{figure}

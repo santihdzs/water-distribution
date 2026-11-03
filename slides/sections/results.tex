@@ -44,30 +44,37 @@
   \small
   \begin{itemize}
     \item NYT optimal (7,072, proven by branch and bound); HAN, FOS, PES approximate
-    \item 39 subsets with known optimum: NN 15.9\% above, NN + 2-opt 1.8\%, optimal in 31
+    \item 40 subsets with known optimum: NN 16.0\% above, NN + 2-opt 1.9\%, optimal in 31
   \end{itemize}
-  \note{Pipes walked twice are the dead ends. The MST bound is too weak to certify the larger instances, so only NYT and subsets up to 24 nodes are proven.}
+  \note{Pipes walked twice are the dead ends. The MST bound is too weak to certify the larger instances, so only NYT and subsets up to 26 nodes are proven.}
 \end{frame}
 
 \begin{frame}{T6 extension: a selection hyper-heuristic}
   \centering\includegraphics[height=0.52\textheight]{hyperheuristic.pdf}\par\raggedright
   \small
   \begin{itemize}
-    \item Picks among 2-opt, swap, relocate, or-opt each step; late acceptance; 30,000 moves, 10 seeds
-    \item 0.2\% mean gap on 11 solved problems; same best HAN and FOS route in every run
+    \item Each step picks one random move (2-opt, swap, relocate, or-opt); late acceptance (LAHC); 30,000 steps, 10 seeds
+    \item 0.2\% mean gap on 11 solved problems vs 0.29\% for the best single move (LAHC 2-opt move); best HAN and FOS route in 9 and 6 of 10 runs (vs 3 and 2)
     \item Best PES route of the study: 34,700, 2.3\% below the T6 route
   \end{itemize}
   \note{A hyper-heuristic searches over heuristics instead of solutions. Its gain here is consistency. The adaptive rule ended up nearly uniform: near a local optimum all moves rarely improve, so their credit decays to the same floor.}
 \end{frame}
 
 \begin{frame}{T7: expansion}
-  \includegraphics[width=\textwidth]{expansion.pdf}
-  \small
-  \begin{itemize}
-    \item FOS point $(7071, 9055)$ becomes node 38 linked to node 17, as in the challenge slides
-    \item 2-d tree checks 6.7 of 18 candidates (NYT) and 11 of 69 (PES) per query
-    \item List update writes 3 entries; matrix copies the whole table
-  \end{itemize}
+  \begin{columns}[c]
+    \begin{column}{0.58\textwidth}
+      \centering\includegraphics[height=0.8\textheight]{expansion.pdf}
+    \end{column}
+    \begin{column}{0.4\textwidth}
+      \small
+      \begin{itemize}
+        \item Each new node links to its nearest non-source node
+        \item FOS point $(7071, 9055)$ becomes node 38 linked to node 17, as in the challenge slides
+        \item 2-d tree checks 6.7 of 18 candidates (NYT) and 11 of 69 (PES) per query
+        \item List update writes 3 entries; matrix copies the whole table
+      \end{itemize}
+    \end{column}
+  \end{columns}
   \note{Every connection matches brute force and SciPy. With two or three insertions per instance brute force is enough; the tree pays for its build only after a few tens of queries.}
 \end{frame}
 
@@ -82,7 +89,7 @@
         \item List $\sim V+E$, matrix $\sim V^2$, Dijkstra $\sim (V+E)\log V$
         \item Floyd-Warshall below $V^3$: NumPy overhead at $V\le 71$
         \item Flows far below worst case: at most 4 augmentations
-        \item Branch and bound: about 1.4 to 2.3 times per added location
+        \item Branch and bound: about 1.4 to 2.2 times per added location
       \end{itemize}
     \end{column}
   \end{columns}

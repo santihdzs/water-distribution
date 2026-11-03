@@ -1,7 +1,14 @@
 \begin{appendices}
-\addcontentsline{toc}{section}{Appendix}
-% \input{appendices/ap-a}  % placeholder, create ap-a.tex before enabling
-% \input{appendices/ap-b}  % placeholder, create ap-b.tex before enabling
-% \input{appendices/ap-c}  % placeholder, create ap-c.tex before enabling
+\section{Sampling walks}\label{app:walks}
+Table~\ref{tab:walks} lists the T6 walks of Table~\ref{tab:routes}, expanded from the tour of the metric closure into consecutive pipes. Each starts and ends at the office and visits every node; repeated nodes are where the walk passes through a junction again.
 
+\begin{table}[H]
+\centering\small
+\caption{T6 closed walks from the office, as node sequences (optimal for NYT, NN + 2-opt for the others).}\label{tab:walks}
+\begin{tabular}{lrp{12.2cm}}
+\toprule
+\tablebody{walks}
+\bottomrule
+\end{tabular}
+\end{table}
 \end{appendices}

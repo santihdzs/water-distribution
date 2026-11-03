@@ -1,20 +1,30 @@
 \section{Implementation}\label{sec:implementation}
-The code is a Python package, \texttt{water}, plus one Jupyter notebook per part (\texttt{00\_data}, \texttt{01} to \texttt{07} for the tasks, \texttt{08\_performance}); each notebook runs top to bottom on its own, locally or in Colab, and writes the figures and tables used here. All algorithms are written by hand; NetworkX and SciPy are used only to cross-check results and Matplotlib only to draw. Claude Code \citep{claude_code} assisted with the writing and the code. Module \texttt{io} parses and validates the files into a \texttt{Network} (coordinates, sources, pipes, office, new nodes); \texttt{graph} builds the adjacency list (id $\to$ list of (neighbour, length)) and the NumPy adjacency matrix with an id-to-index map, and runs BFS, DFS and components on both; \texttt{paths} has Dijkstra with a binary heap (single, repeated, multi-source) and vectorised Floyd-Warshall; \texttt{flow} has the residual graph, Edmonds-Karp, Dinic and the minimum cut; \texttt{tsp} has nearest neighbour, 2-opt, branch and bound, brute force and walk expansion; \texttt{spatial} has brute-force search and the 2-d tree. Module \texttt{tasks} holds the chain \texttt{sectorize} $\to$ \texttt{farthest} $\to$ \texttt{sector\_flows}, the metric closure and the expansion; every notebook calls it, so T4 reads its farthest nodes from T3's distances and parents and T5 builds each sector's flow network from T3's open pipes with T4's $t_s$ as sink.
 
-\paragraph{Verification.} Every notebook checks its results (Table~\ref{tab:checks}); all checks pass on all instances. Pipe lengths also match, to 0.01, the values printed on the course's figures of FOS, NYT and HAN \citep{narvaez_slides}.
+\subsection{Code organization}
+The code is a Python package, \texttt{water}, and one Jupyter notebook per part: \texttt{00\_data} for the datasets, \texttt{01} to \texttt{07} for the tasks, \texttt{08\_performance} for the performance analysis and \texttt{09\_hyper\_heuristic} for the hyper-heuristic. Each notebook runs top to bottom on its own, locally or in Google Colab, and writes the figures and tables used in this report. The four instance files are included in the repository's \texttt{data} folder and are read by relative path; in Colab, the first cell of each notebook clones the repository so that the data and the package are available without any manual step. All algorithms are written by hand; NetworkX and SciPy are used only to cross-check their results, and Matplotlib only to draw. Claude Code \citep{claude_code} assisted with the writing and the code.
+
+The package has one module per concern. \texttt{io} parses and validates the instance files into a \texttt{Network} object holding the coordinates, sources, pipes, office and new nodes. \texttt{graph} builds the adjacency list (a dictionary from each id to a list of (neighbour, length) pairs) and the NumPy adjacency matrix with an id-to-index map, and runs BFS, DFS and component search on both. \texttt{paths} implements Dijkstra with a binary heap and lazy deletion (single, repeated and multi-source) and a vectorised Floyd-Warshall with next-hop matrix. \texttt{flow} implements the residual graph, Edmonds-Karp, Dinic and the minimum cut. \texttt{tsp} implements nearest neighbour, 2-opt, branch and bound, an exhaustive search used for verification, and the expansion of a tour into a walk. \texttt{hh} implements the LLHs, the two selection rules and LAHC. \texttt{spatial} implements the brute-force search and the 2-d tree.
+
+The task chain lives in one module, \texttt{tasks}: \texttt{sectorize} (T3) returns distances, parent pointers, the sector of each node and the open and closed pipes; \texttt{farthest} (T4) reads the farthest node and route of each sector from them; and \texttt{sector\_flows} (T5) builds each sector's flow network from the open pipes with the T4 farthest node as the sink. The module also holds the metric closure used by T2 and T6 and the expansion of T7. Every notebook that needs a result calls these functions, so the sectors, farthest nodes and sinks are identical across notebooks.
+
+\subsection{Verification}
+Every notebook checks its results before using them (Table~\ref{tab:checks}), and all checks pass on all four instances. As an external check, the computed pipe lengths match to 0.01 the values printed on the course's own figures of FOS, NYT and HAN \citep{narvaez_slides}.
 
 \begin{table}[H]
 \centering\small
 \caption{Correctness checks, run on all four instances.}\label{tab:checks}
 \begin{tabular}{lp{13.2cm}}
 \toprule
-T1 & List and matrix traversals visit the same set; BFS depths and components equal NetworkX, also after removing a hub's pipes. \\
-T2 & Floyd-Warshall equals NetworkX all-pairs Dijkstra; every pipe is the shortest path between its endpoints. \\
-T3 & Repeated and multi-source Dijkstra give identical sectors and distances, equal to NetworkX; no exact ties; after closing $C$ the components are exactly the sectors and distances are unchanged. \\
-T4 & Each route runs from $s$ to $t_s$ over open pipes with length $d_G(s,t_s)$; NetworkX on each closed sector gives the same maximum. \\
-T5 & Edmonds-Karp, Dinic and NetworkX agree; capacity and conservation hold everywhere; min-cut capacity equals the flow. \\
-T6 & Branch and bound equals brute force for $n\le9$; every walk is closed at the office, covers all nodes, uses real pipes and has the tour's length. \\
-T7 & 2-d tree equals brute force and SciPy \texttt{cKDTree} on 2,000 random queries per instance; updated list and matrix equal rebuilt ones. \\
+Task & Check \\
+\midrule
+T1 & List and matrix traversals visit the same vertex set; BFS depths and components equal NetworkX, also on graphs split by removing all pipes of a hub node. \\
+T2 & Loop and vectorised lengths agree; Floyd-Warshall equals NetworkX all-pairs Dijkstra; every pipe is the shortest path between its endpoints. \\
+T3 & Repeated and multi-source Dijkstra give identical sectors and distances, equal to NetworkX; no exact ties occur; after closing $C$ the components are exactly the sectors and every distance is unchanged. \\
+T4 & Each route runs from $s$ to $t_s$ over open pipes and has length $d_G(s,t_s)$; NetworkX Dijkstra on each closed sector finds the same maximum distance. \\
+T5 & Edmonds-Karp, Dinic and NetworkX give the same value; capacity and conservation hold on every pipe and node; the minimum-cut capacity equals the flow. \\
+T6 & Floyd-Warshall equals repeated Dijkstra; branch and bound equals exhaustive search for $n\le9$; every walk is closed at the office, covers all nodes, uses real pipes and has the tour's length. \\
+T7 & The 2-d tree equals brute force and SciPy's \texttt{cKDTree} on 2,000 random queries per instance and equals brute force on every insertion; the updated list and matrix equal ones rebuilt from scratch. \\
+HH & All 840 runs return valid tours whose reported length is correct and never below a proven optimum; the best tour of each instance expands into a valid walk. \\
 \bottomrule
 \end{tabular}
 \end{table}

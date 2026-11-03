@@ -16,7 +16,7 @@
     T6 & shortest closed sampling walk from the office \\
     T7 & where a new node connects \\
   \end{tabular}
-  \note{One graph model, seven questions from the challenge slides. With the instructor's approval I covered all seven, because they form a chain: lengths give distances, distances give sectors, sectors give the flow problems.}
+  \note{One graph model, seven questions from the challenge slides. I covered all seven, because they form a chain: lengths give distances, distances give sectors, sectors give the flow problems.}
 \end{frame}
 
 \begin{frame}{Datasets}
@@ -31,9 +31,9 @@
         \item All connected, two sources each, very sparse (density $\le 0.11$)
         \item NYT, HAN near-trees; FOS, PES meshed
         \item 6 of 8 sources are leaves: one pipe out
-        \item Data issues: PES pipe 28--30 listed twice (kept once); NYT new point $(6478,3050)$ is a copy of HAN's (rejected)
+        \item Data issues: PES pipe 28-30 listed twice (kept once); NYT new point $(6478,3050)$ is a copy of HAN's (rejected)
       \end{itemize}
     \end{column}
   \end{columns}
-  \note{Validation logs anything malformed instead of failing. Two real issues: PES's duplicated pipe would double a capacity in the flow task, and NYT's second new point sits five network widths away and equals HAN's entry.}
+  \note{Validation logs anything malformed instead of failing. Two real issues: PES's duplicated pipe would double a capacity in the flow task, and NYT's second new point lies 4.6 network widths east of NYT and equals HAN's entry.}
 \end{frame}

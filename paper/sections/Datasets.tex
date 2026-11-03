@@ -1,9 +1,9 @@
 \section{Datasets}\label{sec:datasets}
-The four instances provided with the challenge (NYT, HAN, FOS, PES) are text files with a \texttt{V E} header and four sections: \texttt{[NODES]} (\texttt{id x y source\_flag}), \texttt{[EDGES]} (\texttt{u v capacity}), \texttt{[OFFICE]} (office id, T6) and \texttt{[NEW]} (\texttt{x y capacity} of nodes to insert, T7). Node attributes are id, coordinates and source flag; the only edge attribute is the third column, which the slides call the pipe capacity and label as the diameter in their figures \citep{narvaez_slides}. It is used as capacity in T5 and never as length. Table~\ref{tab:datasets} summarises the instances.
+The four instances provided with the challenge (NYT, HAN, FOS and PES) are text files with a \texttt{V E} header followed by four sections: \texttt{[NODES]} with \texttt{id x y source\_flag}, \texttt{[EDGES]} with \texttt{u v capacity}, \texttt{[OFFICE]} with the id of the office node used in T6, and \texttt{[NEW]} with \texttt{x y capacity} for each node to insert in T7. Node attributes are therefore the id, the coordinates and the source flag. The only edge attribute is the third column, which the challenge slides call the pipe capacity and label as the diameter in their figures \citep{narvaez_slides}; it is used as the capacity in T5 and never as a length. Lengths are computed from the coordinates in T2. Table~\ref{tab:datasets} summarises the instances after validation.
 
 \begin{table}[H]
 \centering\small
-\caption{Instances after validation. Loops: independent cycles $E-V+1$; Caps.: distinct capacity values.}\label{tab:datasets}
+\caption{Instances after validation. Src.: sources; Non-src.: other nodes; Comp.: connected components; Loops: independent cycles, $E-V+1$; Leaves: nodes of degree 1; Max deg.: largest node degree; Caps.: number of distinct capacity values; Office: id of the office node.}\label{tab:datasets}
 \begin{tabular}{lrrrrrrrrrr}
 \toprule
 \tablebody{datasets}
@@ -11,6 +11,15 @@ The four instances provided with the challenge (NYT, HAN, FOS, PES) are text fil
 \end{tabular}
 \end{table}
 
-\paragraph{Validation.} The loader logs, instead of failing on, malformed or non-finite values, pipes to unknown nodes, self-loops, non-positive capacities, repeated pipes, coincident coordinates, id gaps, header mismatches, a missing office, and \texttt{[NEW]} points outside the network's bounding box enlarged by 50\%. No value is missing or invalid, but three things are unexpected. PES lists pipe 28--30 twice (as \texttt{28 30} and \texttt{30 28}, same capacity); it is kept once, so PES has 98 pipes, not the declared 99, and that pipe's capacity is not doubled in T5. PES ids have 18 gaps, handled by an id-to-index map. NYT's second \texttt{[NEW]} point $(6478,3050)$ lies about five network widths east of NYT and equals HAN's second entry, so it is treated as a copy error and not inserted.
+The loader checks every record and logs problems instead of failing. It drops malformed or non-finite values, pipes to unknown nodes, self-loops and non-positive capacities, keeps a repeated pipe only once, and flags coincident coordinates, gaps in the ids, header counts that do not match the data, a missing office, and \texttt{[NEW]} points outside the network's bounding box enlarged by 50\% on each side. No value is missing or invalid in any file, but three things are unexpected. PES lists pipe 28-30 twice, once as \texttt{28 30} and once as \texttt{30 28} with the same capacity; it is kept once, so PES has 98 pipes rather than the declared 99, and the capacity of that pipe is not doubled in T5. The PES ids run from 1 to 89 with 18 gaps, which an id-to-index map handles. NYT's second \texttt{[NEW]} point, $(6478,3050)$, lies 4.6 network widths east of NYT's eastern edge and is identical to HAN's second entry, so it is treated as a copy error and not inserted.
 
-\paragraph{Structure.} All instances are connected and have two sources. NYT and HAN are almost trees, FOS and PES are meshed. Six of the eight sources are leaves (both in NYT and HAN, 37 in FOS, 7 in PES), joined to the network by a single pipe. All four networks are very sparse, with density $2E/(V(V-1))$ between 0.039 (PES) and 0.111 (NYT).
+All four instances are connected and have exactly two sources. NYT and HAN are almost trees (2 and 3 independent loops), so most nodes have a single route to a source, while FOS and PES are meshed (22 and 28 loops). Six of the eight sources are leaves (both sources of NYT and HAN, source 37 of FOS and source 7 of PES), so a single pipe joins each of them to the rest of the network. All networks are very sparse: the density $2E/(V(V-1))$ ranges from 0.039 (PES) to 0.111 (NYT). Figure~\ref{fig:networks} draws the four networks on their original coordinates.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.92\textwidth]{networks.pdf}
+    \caption{The four instances on their original coordinates, with sources and the office node marked.}
+    \label{fig:networks}
+\end{figure}
+
+Computationally, each instance is held in a \texttt{Network} object: a dictionary from node id to coordinates, the list of sources, the list of pipes as $(u,v,c)$ triples, the office and the accepted new nodes. The algorithms run on structures derived from it, an adjacency list and an adjacency matrix (Section~\ref{sec:implementation}); T1 compares the two.

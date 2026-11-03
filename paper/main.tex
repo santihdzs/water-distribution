@@ -1,6 +1,9 @@
 \documentclass[pdftex,12pt,a4paper]{article} 
 % margin size
 \usepackage[margin=1in]{geometry}
+% t1 encoding so underscores in \texttt render and copy as real characters
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
 
 % Math and algorithms
 \usepackage{amsmath,amssymb,amsthm,esint}  % For both in-line and equation mode
@@ -83,5 +86,8 @@
 \addcontentsline{toc}{section}{References}
 \bibliographystyle{apalike}
 \bibliography{references}
+
+\clearpage
+\input{appendices/appendix}
 
 \end{document}
