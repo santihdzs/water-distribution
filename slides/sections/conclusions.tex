@@ -1,8 +1,16 @@
 \section{Conclusions}
-\begin{frame}{Conclusions}
+\begin{frame}{Conclusions and limitations}
   \begin{itemize}
-    \item what was shown
-    \item what is next
+    \item T6 is the only hard problem: exponential exact search, optimum proven only for NYT and subsets up to 24 nodes
+    \item Cheap heuristics carry most of the value: 2-opt within 1.8\% on average; the hyper-heuristic adds consistency
+    \item Most expensive polynomial step: Floyd-Warshall, $O(V^3)$; everything else is near linear here
   \end{itemize}
-  \note{notes}
+  \vspace{0.4em}
+  \textbf{Limitations}
+  \begin{itemize}\small
+    \item No hydraulics: no pressure, head loss or demand; capacities without units; age $\propto$ distance
+    \item One source--sink pair per sector; stated conventions for duplicates, outliers and insertion order
+    \item Weak bound on near-trees; small instances, so growth measured on subsets
+  \end{itemize}
+  \note{The study shows how different techniques answer different questions on the same network, and how the answers explain one another.}
 \end{frame}

@@ -1,0 +1,28 @@
+\section{Connections}
+\begin{frame}{How the tasks inform each other}
+  \centering
+  \begin{tikzpicture}[node distance=0.5cm and 0.6cm, every node/.style={font=\small},
+      box/.style={draw=loomaccent, fill=loomaccent!12, rounded corners=2pt, minimum width=1.9cm, minimum height=0.7cm, align=center},
+      arr/.style={-{Stealth[length=2mm]}, loomink, thick}]
+    \node[box] (t1) {T1\\representation};
+    \node[box, right=of t1] (t2) {T2\\lengths};
+    \node[box, right=of t2] (t3) {T3\\sectors};
+    \node[box, right=of t3] (t4) {T4\\farthest node};
+    \node[box, right=of t4] (t5) {T5\\max flow};
+    \node[box, below=of t3] (t6) {T6\\sampling route};
+    \node[box, below=of t6] (t7) {T7\\expansion};
+    \draw[arr] (t1) -- (t2);
+    \draw[arr] (t2) -- node[above, font=\scriptsize] {$\ell$} (t3);
+    \draw[arr] (t3) -- node[above, font=\scriptsize] {$V_s$} (t4);
+    \draw[arr] (t4) -- node[above, font=\scriptsize] {$t_s$} (t5);
+    \draw[arr] (t2) |- node[pos=0.25, left, font=\scriptsize] {metric closure} (t6);
+    \draw[arr] (t7) -| node[pos=0.25, below, font=\scriptsize] {changes the network} (t1);
+  \end{tikzpicture}
+  \vspace{0.5em}
+  \begin{itemize}\small
+    \item Leaf sources explain both the single-pipe bottlenecks (T5) and the there-and-back legs (T6)
+    \item PES's two clusters (T2) explain why two closures separate its sectors (T3)
+    \item Same source--sink pairs: shortest route (T4) vs narrowest cut (T5)
+  \end{itemize}
+  \note{One package function chain feeds every notebook, so the sectors, farthest nodes and sinks are identical everywhere.}
+\end{frame}

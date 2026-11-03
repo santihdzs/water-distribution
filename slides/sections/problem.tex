@@ -1,8 +1,39 @@
-\section{Problem}
-\begin{frame}{Problem}
+\section{Problem and datasets}
+\begin{frame}{The problem}
   \begin{itemize}
-    \item what is broken, in one line
-    \item why it matters
+    \item Network $G=(V,E)$: junctions with coordinates, two sources, pipes with a capacity
+    \item Pipe length $\ell(u,v)=\lVert p_u-p_v\rVert$; network distance $d_G$ under $\ell$
+    \item Seven questions, one study: each answer feeds the next
   \end{itemize}
-  \note{notes: the prose from the paper's introduction goes here}
+  \vspace{0.4em}
+  \small
+  \begin{tabular}{ll}
+    T1 & how to store and explore the network \\
+    T2 & how long the pipes are, how indirect the network is \\
+    T3 & which source supplies each node, which pipes to close \\
+    T4 & which node of each sector gets the oldest water \\
+    T5 & how much water reaches that node, and what limits it \\
+    T6 & shortest closed sampling walk from the office \\
+    T7 & where a new node connects \\
+  \end{tabular}
+  \note{One graph model, seven questions from the challenge slides. With the instructor's approval I covered all seven, because they form a chain: lengths give distances, distances give sectors, sectors give the flow problems.}
+\end{frame}
+
+\begin{frame}{Datasets}
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \includegraphics[width=\textwidth]{networks.pdf}
+    \end{column}
+    \begin{column}{0.43\textwidth}
+      \small
+      \begin{itemize}
+        \item NYT, HAN, FOS, PES: 20 to 71 nodes, 21 to 98 pipes
+        \item All connected, two sources each, very sparse (density $\le 0.11$)
+        \item NYT, HAN near-trees; FOS, PES meshed
+        \item 6 of 8 sources are leaves: one pipe out
+        \item Data issues: PES pipe 28--30 listed twice (kept once); NYT new point $(6478,3050)$ is a copy of HAN's (rejected)
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \note{Validation logs anything malformed instead of failing. Two real issues: PES's duplicated pipe would double a capacity in the flow task, and NYT's second new point sits five network widths away and equals HAN's entry.}
 \end{frame}

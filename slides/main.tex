@@ -3,6 +3,8 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{amsmath,amssymb}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
 
 % reuse the paper's figures and logo, nothing is regenerated.
 % first hit wins, so a local figures/ overrides the paper's.
@@ -10,10 +12,13 @@
 
 \usepackage{loomtheme}
 
-\title{Presentation Title}
-\subtitle{Subtitle}
-\author{Santiago Hernández}
-\date{\today}
+% notebook-generated table bodies from the paper; the primitive input lets \bottomrule follow
+\makeatletter\newcommand{\tablebody}[1]{\@@input ../paper/tables/#1.tex }\makeatother
+
+\title{Algorithmic Analysis of Water Distribution Networks}
+\subtitle{TC2038 Situation Problem 2: all seven tasks}
+\author{Santiago Hernández Senosiain}
+\date{November 2, 2026}
 
 \begin{document}
 
@@ -33,7 +38,7 @@
 \input{sections/problem}
 \input{sections/methods}
 \input{sections/results}
-\input{sections/comparison}
+\input{sections/connections}
 \input{sections/conclusions}
 
 \begin{frame}[plain]

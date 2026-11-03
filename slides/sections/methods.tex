@@ -1,7 +1,33 @@
-\section{Methods}
-\begin{frame}{Methods}
-  \begin{itemize}
-    \item the approach in one line, keep this frame tight
+\section{Tasks and techniques}
+\begin{frame}{Tasks and techniques}
+  \centering\footnotesize\setlength{\tabcolsep}{4pt}
+  \begin{tabular}{llll}
+    \toprule
+    Task & Technique & Main algorithm & Compared against \\
+    \midrule
+    T1 representation & graph traversal & BFS, DFS, components & list vs matrix \\
+    T2 pipe lengths & geometry, DP & lengths, Floyd-Warshall & scan, hash, sorted \\
+    T3 sectorization & greedy & multi-source Dijkstra & Dijkstra per source \\
+    T4 freshness & greedy & shortest-path tree & before vs after sectors \\
+    T5 maximum flow & network flow & Dinic & Edmonds-Karp \\
+    T6 sampling route & greedy, local search, B\&B & NN, 2-opt, B\&B & exact optimum \\
+    T7 expansion & divide and conquer & 2-d tree & brute force \\
+    \bottomrule
+  \end{tabular}
+  \raggedright
+  \vspace{0.6em}
+  \begin{itemize}\small
+    \item All algorithms hand-written; NetworkX and SciPy only to cross-check them
   \end{itemize}
-  \note{notes: derivations and detail stay spoken, not on the slide}
+  \note{Each task gets the technique that matches its structure, plus a baseline. Every result is verified against a library or brute force before use.}
+\end{frame}
+
+\begin{frame}{Three reductions that make the tasks tractable}
+  \begin{itemize}
+    \item \textbf{T3:} multi-source Dijkstra $=$ Dijkstra from a virtual super-source; first source to settle a node owns it. One run instead of $|S|$
+    \item \textbf{T5:} each pipe $\to$ two arcs of capacity $c$; max flow $=$ capacity of the min cut, whose saturated pipes are the bottleneck
+    \item \textbf{T6:} optimal walk $=$ optimal tour on the metric closure $D_{uv}=d_G(u,v)$, expanded back into real pipes. Branch and bound prunes with
+    \[\mathrm{LB}=\mathrm{cost}+\mathrm{MST}(R)+\min_{r\in R}D_{ur}+\min_{r\in R}D_{ro}\]
+  \end{itemize}
+  \note{The T6 reduction matters because the networks have no Hamiltonian cycle: the technician must revisit nodes. Reading any walk as its order of first visits gives a tour that is no longer, and each tour expands into a walk of the same length.}
 \end{frame}
